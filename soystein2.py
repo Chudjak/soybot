@@ -12,8 +12,9 @@ from bs4 import BeautifulSoup
 from io import BytesIO
 import random
 import json
-soy_spam_prevention = datetime.datetime.now() - datetime.timedelta(seconds=30)
+soy_spam_prevention = datetime.datetime.now() - datetime.timedelta(seconds=15)
 soy_random_spam = datetime.datetime.now() - datetime.timedelta(seconds=7)
+spam_counter = 0
 messages = []
 dictionary = {}
 
@@ -39,10 +40,21 @@ async def on_ready():
 @tree.command(name = "taggedsoy", description = "Got a specific gem in mind?", guild=discord.Object(id=672761536477134860))
 async def first_command(interaction, tag: str):
     global soy_spam_prevention
+    global spam_counter
     current_time = datetime.datetime.now()
-    if current_time < soy_spam_prevention + datetime.timedelta(seconds=30):
-        await interaction.response.send_message('No spam, darlings.')
-        return
+    user = interaction.user
+    if current_time < soy_spam_prevention + datetime.timedelta(seconds=15):
+        if not user.guild_permissions.manage_roles:
+            await interaction.response.send_message('No spam, darlings.')
+            spam_counter = spam_counter + 1
+            if spam_counter == 3:
+                mute_role = discord.utils.get(user.guild.roles, name='Omega Faggot')
+                await user.add_roles(mute_role)
+                await interaction.channel.send('I mean it, '+user.mention+'!')
+                await asyncio.sleep(60)
+                await user.remove_roles(mute_role)
+            return
+    spam_counter = 0
     soy_spam_prevention = datetime.datetime.now()
     response = requests.get('https://booru.soy/random_image/view/' + tag)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -52,7 +64,13 @@ async def first_command(interaction, tag: str):
     if source_element is not None:
         image_url = soup.find('source', {'type': ['video/mp4','video/webm']})['src']
     else: 
-        image_url = soup.find('img', {'id': 'main_image'})['src']
+        testingurl = soup.find('img', {'id': 'main_image'})
+        print(testingurl)
+        if testingurl is not None:
+            image_url = soup.find('img', {'id': 'main_image'})['src']
+        else:
+            await interaction.response.send_message('No '+tag+' gems exist! Sad!')
+            return
         
     # fix the url
     image_url = 'https://booru.soy' + image_url
@@ -64,6 +82,23 @@ async def first_command(interaction, tag: str):
     
 @tree.command(name = "help", description = "I fucking hate you.", guild=discord.Object(id=672761536477134860))
 async def first_command(interaction):
+    global soy_spam_prevention
+    global spam_counter
+    current_time = datetime.datetime.now()
+    user = interaction.user
+    if current_time < soy_spam_prevention + datetime.timedelta(seconds=15):
+        if not user.guild_permissions.manage_roles:
+            await interaction.response.send_message('No spam, darlings.')
+            spam_counter = spam_counter + 1
+            if spam_counter == 3:
+                mute_role = discord.utils.get(user.guild.roles, name='Omega Faggot')
+                await user.add_roles(mute_role)
+                await interaction.channel.send('I mean it, '+user.mention+'!')
+                await asyncio.sleep(60)
+                await user.remove_roles(mute_role)
+            return
+    spam_counter = 0
+    soy_spam_prevention = datetime.datetime.now()
     await interaction.response.send_message(random.choice(['No gems for troons.', 'The Sommunity (Soy Community) is a term that broadly refers to those involved in the wider soyjak culture. ', 'Soyjak.party, also known as The Party, the \'Party, the \'arty, soy spinoff, soyfag.sharty, soyshart.farty, the \'sharty, and countless other names is an imageboard primarily dedicated to datamining.', 'I know where you live.', 'The Five Board Plan was a major restructuring of soyjak.party boards that occurred on 11th November, 2022 under a policy of board consolidation, with further reforms delievered over the next two days.']))
     
 @tree.command(name = "mute", description = "Duckman posting ponies again? Don't you worry.", guild=discord.Object(id=672761536477134860)) #Add the guild ids in which the slash command will appear. If it should be in all, remove the argument, but note that it will take some time (up to an hour) to register the command if it's for all guilds.
@@ -162,12 +197,23 @@ async def first_command(interaction):
 async def first_command(interaction):
     if interaction.channel.id == 1040031774803230720:
         return
-    global soy_random_spam
+    global soy_spam_prevention
+    global spam_counter
     current_time = datetime.datetime.now()
-    if current_time < soy_random_spam + datetime.timedelta(seconds=7):
-        await interaction.response.send_message('No spam, darlings.')
-        return
-    soy_random_spam = datetime.datetime.now()
+    user = interaction.user
+    if current_time < soy_spam_prevention + datetime.timedelta(seconds=15):
+        if not user.guild_permissions.manage_roles:
+            await interaction.response.send_message('No spam, darlings.')
+            spam_counter = spam_counter + 1
+            if spam_counter == 3:
+                mute_role = discord.utils.get(user.guild.roles, name='Omega Faggot')
+                await user.add_roles(mute_role)
+                await interaction.channel.send('I mean it, '+user.mention+'!')
+                await asyncio.sleep(60)
+                await user.remove_roles(mute_role)
+            return
+    spam_counter = 0
+    soy_spam_prevention = datetime.datetime.now()
     # send a request to the "Random" button URL and parse the HTML
     response = requests.get('https://booru.soy/random_image/view')
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -244,39 +290,6 @@ async def on_message(message):
                 json.dump(data, f)
     dictionary = preprocess_text(message_str)
     save_to_file(dictionary)
-    def generate_markov_chain(num_words):
-        # Load the dictionary from the JSON file
-        with open("dictionary.json", "r") as f:
-            word_counts = json.load(f)
-
-        # Generate a list of tuples containing the words and their probabilities
-        word_probs = []
-        for word, count in word_counts.items():
-            total = 0
-            for value in count.values():
-                total += value
-            word_probs.append((word, total / sum(word_counts["counts"].values())))
-
-        # Generate a random starting word
-        trve = random.choices(list(word_counts["counts"]), weights=list(word_counts["counts"].values()))[0]
-        trve = trve.capitalize()
-        chain = [trve]
-
-        # Generate the rest of the chain
-        for i in range(num_words):
-            next_words = word_counts
-            total_count = sum(next_words["counts"].values())
-            rand = random.uniform(0, total_count)
-            for next_word, count in next_words["counts"].items():
-                if rand < count:
-                    break
-                rand -= count
-            chain.append(next_word)
-            word = next_word
-
-        # Return the resulting chain
-        chain_real = ' '.join(chain)
-        return chain_real
 # Start the Discord bot
 client.run(TOKEN)
 
