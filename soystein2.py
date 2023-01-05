@@ -22,6 +22,8 @@ dictionary = {}
 
 # Set the bot token
 TOKEN = open("token.txt", "r").readline()
+# Get the mute role - My server used a word that is banned on github
+mute_role_name = open("mute_role.txt", r).readline()
 
 # Create a Discord client with the required intents
 intents = discord.Intents.all()
