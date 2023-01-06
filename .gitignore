@@ -129,6 +129,5 @@ dmypy.json
 .pyre/
 
 #misc
-token.txt
-mute_role.txt
+*.txt
 *.json

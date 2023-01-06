@@ -23,7 +23,7 @@ dictionary = {}
 # Set the bot token
 TOKEN = open("token.txt", "r").readline()
 # Get the mute role - My server used a word that is banned on github
-mute_role_name = open("mute_role.txt", r).readline()
+mute_role_name = open("mute_role.txt", "r").readline()
 
 # Create a Discord client with the required intents
 intents = discord.Intents.all()
@@ -38,7 +38,25 @@ async def on_ready():
     await tree.sync(guild=discord.Object(id=672761536477134860))
     print("Command tree LOADED!")
     print('------')
-    
+
+@tree.command(name = "russianroulette", description = '50 percent chance to mute you for an hour and 50 percent chance to mute someone else.', guild=discord.Object(id=672761536477134860))
+async def first_command(interaction):
+    members = interaction.guild.members
+    member = random.choice(members)
+    if interaction.user.guild_permissions.manage_roles:
+        await interaction.response.send_message('Wouldn\'t be fair to let someone that cannot be timed out use this command, now would it?')
+        return
+    if(random.randint(1,100) >= 65):
+        duration = random.randint(60, 600)
+        await member.timeout(datetime.timedelta(seconds=duration), reason='Shot by a faulty revolver.')
+        await interaction.response.send_message('Lucky! You hit '+member.mention+'. He will be back in '+str(duration)+' seconds.')
+    else:
+        await interaction.user.timeout(datetime.timedelta(minutes=30), reason='Shot by his own gun.')
+        await interaction.response.send_message('Unlucky! You shot yourself, you '+random.choice(['goof!', 'idiot!', 'dummy!', 'mongoloid!', 'nincompoop!', 'rat!', 'fink!']))
+        
+        
+
+
 @tree.command(name = "taggedsoy", description = "Got a specific gem in mind?", guild=discord.Object(id=672761536477134860))
 async def first_command(interaction, tag: str):
     global soy_spam_prevention
@@ -50,11 +68,8 @@ async def first_command(interaction, tag: str):
             await interaction.response.send_message('No spam, darlings.')
             spam_counter = spam_counter + 1
             if spam_counter == 3:
-                mute_role = discord.utils.get(user.guild.roles, name='Omega Faggot')
-                await user.add_roles(mute_role)
+                await user.timeout(datetime.timedelta(minutes=5), reason='Spamming commands.')
                 await interaction.channel.send('I mean it, '+user.mention+'!')
-                await asyncio.sleep(60)
-                await user.remove_roles(mute_role)
             return
     spam_counter = 0
     soy_spam_prevention = datetime.datetime.now()
@@ -93,15 +108,12 @@ async def first_command(interaction):
             await interaction.response.send_message('No spam, darlings.')
             spam_counter = spam_counter + 1
             if spam_counter == 3:
-                mute_role = discord.utils.get(user.guild.roles, name='Omega Faggot')
-                await user.add_roles(mute_role)
+                await user.timeout(datetime.timedelta(minutes=5), reason='Spamming commands.')
                 await interaction.channel.send('I mean it, '+user.mention+'!')
-                await asyncio.sleep(60)
-                await user.remove_roles(mute_role)
             return
     spam_counter = 0
     soy_spam_prevention = datetime.datetime.now()
-    await interaction.response.send_message(random.choice(['No gems for troons.', 'The Sommunity (Soy Community) is a term that broadly refers to those involved in the wider soyjak culture. ', 'Soyjak.party, also known as The Party, the \'Party, the \'arty, soy spinoff, soyfag.sharty, soyshart.farty, the \'sharty, and countless other names is an imageboard primarily dedicated to datamining.', 'I know where you live.', 'The Five Board Plan was a major restructuring of soyjak.party boards that occurred on 11th November, 2022 under a policy of board consolidation, with further reforms delievered over the next two days.']))
+    await interaction.response.send_message(random.choice(['No gems for troons.', 'The Sommunity (Soy Community) is a term that broadly refers to those involved in the wider soyjak culture. ', 'Soyjak.party, also known as The Party, the \'Party, the \'arty, soy spinoff, soyfag.sharty, soyshart.farty, the \'sharty, and countless other names is an imageboard primarily dedicated to datamining.', 'I know where you live.', 'The Five Board Plan was a major restructuring of soyjak.party boards that occurred on 11th November, 2022 under a policy of board consolidation, with further reforms delievered over the next two days.', '\"Fundamentals\" is a made up word designed to make kids with low APM feel better about themselves.', 'If you ever find yourself running low on guard bar, drink a lemonade. It won\'t save you from getting guard broken, but it sure is very tasty!', 'It\'s not about how much fun you have. It\'s about how much fun you have relative to your opponent.', 'Always DP on wakeup.', 'Always grab on wakeup.', 'Always jump on wakeup.', 'Always super on wakeup.', 'Always dodge dwarf.']))
     
 @tree.command(name = "mute", description = "Duckman posting ponies again? Don't you worry.", guild=discord.Object(id=672761536477134860)) #Add the guild ids in which the slash command will appear. If it should be in all, remove the argument, but note that it will take some time (up to an hour) to register the command if it's for all guilds.
 async def first_command(interaction, target: discord.Member, time: int):
@@ -115,7 +127,8 @@ async def first_command(interaction, target: discord.Member, time: int):
         mute_duration = time
 
         # Get the mute role
-        mute_role = discord.utils.get(target.guild.roles, name='Omega Faggot')
+        global mute_role_name
+        mute_role = discord.utils.get(target.guild.roles, name=mute_role_name)
 
         # Add the mute role to the user
         await target.add_roles(mute_role)
@@ -208,11 +221,8 @@ async def first_command(interaction):
             await interaction.response.send_message('No spam, darlings.')
             spam_counter = spam_counter + 1
             if spam_counter == 3:
-                mute_role = discord.utils.get(user.guild.roles, name='Omega Faggot')
-                await user.add_roles(mute_role)
+                await user.timeout(datetime.timedelta(minutes=5), reason='Spamming commands.')
                 await interaction.channel.send('I mean it, '+user.mention+'!')
-                await asyncio.sleep(60)
-                await user.remove_roles(mute_role)
             return
     spam_counter = 0
     soy_spam_prevention = datetime.datetime.now()
