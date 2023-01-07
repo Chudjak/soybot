@@ -7,7 +7,6 @@ import random
 import sys
 import requests
 import re
-import difflib
 from bs4 import BeautifulSoup
 from io import BytesIO
 import random
@@ -24,6 +23,7 @@ dictionary = {}
 TOKEN = open("token.txt", "r").readline()
 # Get the mute role - My server used a word that is banned on github
 mute_role_name = open("mute_role.txt", "r").readline()
+server_id = open("server_id.txt", 'r').readline()
 
 # Create a Discord client with the required intents
 intents = discord.Intents.all()
@@ -63,6 +63,9 @@ async def first_command(interaction, tag: str):
     global spam_counter
     current_time = datetime.datetime.now()
     user = interaction.user
+    if user.id == 150711811807772674:
+        await user.timeout(datetime.timedelta(hours=6), reason='Trying to use the bot.')
+        return
     if current_time < soy_spam_prevention + datetime.timedelta(seconds=15):
         if not user.guild_permissions.manage_roles:
             await interaction.response.send_message('No spam, darlings.')
@@ -73,6 +76,11 @@ async def first_command(interaction, tag: str):
             return
     spam_counter = 0
     soy_spam_prevention = datetime.datetime.now()
+    if interaction.channel.id == 1040031774803230720 and not interaction.user.guild_permissions.manage_roles:
+        if(random.randint(1,100) > 80):
+            await interaction.channel.send('Digging up gems is dangerous work. Have a mute for your troubles, ' + user.mention+ '!')
+            await interaction.user.timeout(datetime.timedelta(minutes=2), reason='Jakked in dangerous waters.')
+            return
     response = requests.get('https://booru.soy/random_image/view/' + tag)
     soup = BeautifulSoup(response.text, 'html.parser')
     # find the image URL in the HTML
@@ -97,6 +105,27 @@ async def first_command(interaction, tag: str):
         await interaction.response.send_message('Here is your '+tag+random.choice([' gem!',' coal!',' dust!',' diamond!']))
         await interaction.channel.send(image_url)
     
+@tree.command(name = "morehelp", description = "Add a new message to the bot's storage.", guild = discord.Object(id=672761536477134860))
+async def first_command(interaction, message: str):
+    user = interaction.user
+    if user.guild_permissions.manage_roles:
+        if not os.path.exists("wordlist.txt"):
+        # Create the file if it does not exist
+            with open("wordlist.txt", "w") as f:
+                f.write("")
+        # Open the list file and read the contents
+        with open("wordlist.txt", "r") as f:
+            items = f.read().split(",")
+        
+        # Append the new sentence to the list
+        items.append(message)
+        
+        # Write the updated list back to the file
+        with open("wordlist.txt", "w") as f:
+            f.write(",".join(items))
+        await interaction.response.send_message('Added \'' + message + '\' to the list of tips.')
+
+    
 @tree.command(name = "help", description = "I fucking hate you.", guild=discord.Object(id=672761536477134860))
 async def first_command(interaction):
     global soy_spam_prevention
@@ -113,10 +142,10 @@ async def first_command(interaction):
             return
     spam_counter = 0
     soy_spam_prevention = datetime.datetime.now()
-    await interaction.response.send_message(random.choice(['No gems for troons.', 'The Sommunity (Soy Community) is a term that broadly refers to those involved in the wider soyjak culture. ', 'Soyjak.party, also known as The Party, the \'Party, the \'arty, soy spinoff, soyfag.sharty, soyshart.farty, the \'sharty, and countless other names is an imageboard primarily dedicated to datamining.', 'I know where you live.', 'The Five Board Plan was a major restructuring of soyjak.party boards that occurred on 11th November, 2022 under a policy of board consolidation, with further reforms delievered over the next two days.', '\"Fundamentals\" is a made up word designed to make kids with low APM feel better about themselves.', 'If you ever find yourself running low on guard bar, drink a lemonade. It won\'t save you from getting guard broken, but it sure is very tasty!', 'It\'s not about how much fun you have. It\'s about how much fun you have relative to your opponent.', 'Always DP on wakeup.', 'Always grab on wakeup.', 'Always jump on wakeup.', 'Always super on wakeup.', 'Always dodge dwarf.']))
+    await interaction.response.send_message(random.choice(['No gems for troons.', 'The Sommunity (Soy Community) is a term that broadly refers to those involved in the wider soyjak culture. ', 'Soyjak.party, also known as The Party, the \'Party, the \'arty, soy spinoff, soyfag.sharty, soyshart.farty, the \'sharty, and countless other names is an imageboard primarily dedicated to datamining.', 'I know where you live.', 'The Five Board Plan was a major restructuring of soyjak.party boards that occurred on 11th November, 2022 under a policy of board consolidation, with further reforms delievered over the next two days.', '\"Fundamentals\" is a made up word designed to make kids with low APM feel better about themselves.', 'If you ever find yourself running low on guard bar, drink a lemonade. It won\'t save you from getting guard broken, but it sure is very tasty!', 'It\'s not about how much fun you have. It\'s about how much fun you have relative to your opponent.', 'Always DP on wakeup.', 'Always grab on wakeup.', 'Always jump on wakeup.', 'Always super on wakeup.', 'Always dodge dwarf.', 'It\'s a fighting game, not a blocking game.', 'Always mute AJ.', 'Always rush Ty.']))
     
 @tree.command(name = "mute", description = "Duckman posting ponies again? Don't you worry.", guild=discord.Object(id=672761536477134860)) #Add the guild ids in which the slash command will appear. If it should be in all, remove the argument, but note that it will take some time (up to an hour) to register the command if it's for all guilds.
-async def first_command(interaction, target: discord.Member, time: int):
+async def first_command(interaction, target: discord.Member, time: int, reason: str):
     '''# Check if the user has the required role
     if interaction.user.id == 1040033235075346543:  # replace with the user's ID
         await interaction.response.send_message("Matrixlets seething over pythonchads.")
@@ -127,18 +156,12 @@ async def first_command(interaction, target: discord.Member, time: int):
         mute_duration = time
 
         # Get the mute role
-        global mute_role_name
-        mute_role = discord.utils.get(target.guild.roles, name=mute_role_name)
-
-        # Add the mute role to the user
-        await target.add_roles(mute_role)
-        
-        # Record the start time of the mute
+        await target.timeout(datetime.timedelta(minutes=mute_duration), reason=reason)
         mute_start_time = datetime.datetime.now()
 
         # Send a confirmation message
         with open('ADMIN ABUSE.ogg', 'rb') as f:
-            await interaction.response.send_message(f'{target.mention} was muted for {mute_duration} {"minutes" if mute_duration > 1 else "minute"}!', file=discord.File(f))
+            await interaction.response.send_message(f'{target.mention} was muted for {mute_duration} {"minutes" if mute_duration > 1 else "minute"} for ' +'\''+reason+'\'!', file=discord.File(f))
         # Display information about the mute in the console
         if mute_duration == 1:
             print(f'{target.name} was muted by {user.name} for {mute_duration} minute')
@@ -152,8 +175,6 @@ async def first_command(interaction, target: discord.Member, time: int):
 
             # Check if the current time is greater than the start time plus the duration of the mute
             if current_time > mute_start_time + datetime.timedelta(minutes=mute_duration):
-                # Remove the mute role from the user
-                await target.remove_roles(mute_role)
 
                 # Send a notification message
                 await interaction.channel.send(f'{target.mention} has been FREED.')
@@ -210,12 +231,15 @@ async def first_command(interaction):
 
 @tree.command(name = "soy", description = "Peruse some gems.", guild=discord.Object(id=672761536477134860)) #Add the guild ids in which the slash command will appear. If it should be in all, remove the argument, but note that it will take some time (up to an hour) to register the command if it's for all guilds.
 async def first_command(interaction):
+    user = interaction.user
     if interaction.channel.id == 1040031774803230720:
+        return
+    if user.id == 150711811807772674:
+        await user.timeout(datetime.timedelta(hours=6), reason='Trying to use the bot.')
         return
     global soy_spam_prevention
     global spam_counter
     current_time = datetime.datetime.now()
-    user = interaction.user
     if current_time < soy_spam_prevention + datetime.timedelta(seconds=15):
         if not user.guild_permissions.manage_roles:
             await interaction.response.send_message('No spam, darlings.')
