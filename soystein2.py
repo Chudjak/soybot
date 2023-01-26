@@ -5,10 +5,12 @@ import datetime
 import os
 import random
 import sys
+import subprocess
 import requests
 import re
 from bs4 import BeautifulSoup
 from io import BytesIO
+from termcolor import colored
 import random
 import json
 soy_spam_prevention = datetime.datetime.now() - datetime.timedelta(seconds=15)
@@ -37,7 +39,22 @@ async def on_ready():
     print(client.user.id)
     await tree.sync(guild=discord.Object(id=672761536477134860))
     print("Command tree LOADED!")
+    target_guild = client.get_guild(672761536477134860)
+    if target_guild:
+        target_guild.fetch_members()
+        with open("members.txt", "w") as f:
+            for member in target_guild.members:
+                f.write(f'{member.name}: {member.id}\n')
     print('------')
+    channel = client.get_channel(1066037129542647888)
+    asyncio.create_task(input_loop(channel))
+
+
+
+async def input_loop(channel):
+    while True:
+        message = await asyncio.get_event_loop().run_in_executor(None, sys.stdin.readline)
+        await channel.send(message)
 
 @tree.command(name = "russianroulette", description = '50 percent chance to mute you for an hour and 50 percent chance to mute someone else.', guild=discord.Object(id=672761536477134860))
 async def first_command(interaction):
@@ -76,8 +93,8 @@ async def first_command(interaction, tag: str):
             return
     spam_counter = 0
     soy_spam_prevention = datetime.datetime.now()
-    if interaction.channel.id == 1040031774803230720 and not interaction.user.guild_permissions.manage_roles:
-        if(random.randint(1,100) > 80):
+    if interaction.channel.id == 1066037129542647888 and not interaction.user.guild_permissions.manage_roles:
+        if(random.randint(1,100) > 60):
             await interaction.channel.send('Digging up gems is dangerous work. Have a mute for your troubles, ' + user.mention+ '!')
             await interaction.user.timeout(datetime.timedelta(minutes=2), reason='Jakked in dangerous waters.')
             return
@@ -104,27 +121,6 @@ async def first_command(interaction, tag: str):
     if image_url:
         await interaction.response.send_message('Here is your '+tag+random.choice([' gem!',' coal!',' dust!',' diamond!']))
         await interaction.channel.send(image_url)
-    
-@tree.command(name = "morehelp", description = "Add a new message to the bot's storage.", guild = discord.Object(id=672761536477134860))
-async def first_command(interaction, message: str):
-    user = interaction.user
-    if user.guild_permissions.manage_roles:
-        if not os.path.exists("wordlist.txt"):
-        # Create the file if it does not exist
-            with open("wordlist.txt", "w") as f:
-                f.write("")
-        # Open the list file and read the contents
-        with open("wordlist.txt", "r") as f:
-            items = f.read().split(",")
-        
-        # Append the new sentence to the list
-        items.append(message)
-        
-        # Write the updated list back to the file
-        with open("wordlist.txt", "w") as f:
-            f.write(",".join(items))
-        await interaction.response.send_message('Added \'' + message + '\' to the list of tips.')
-
     
 @tree.command(name = "help", description = "I fucking hate you.", guild=discord.Object(id=672761536477134860))
 async def first_command(interaction):
@@ -189,6 +185,26 @@ async def first_command(interaction, target: discord.Member, time: int, reason: 
     else:
         # The user does not have the required role, send an error message
         await interaction.response.send_message('HWNBAG.')
+        
+@tree.command(name = "morehelp", description = "Add a new message to the bot's storage.", guild = discord.Object(id=672761536477134860))
+async def first_command(interaction, message: str):
+    user = interaction.user
+    if user.guild_permissions.manage_roles:
+        with open("wordlist.json", "r") as f:
+            file_contents = f.read()
+            if not file_contents:
+                with open("wordlist.json", "w") as f:
+                    json_data = json.dumps(message)
+                    json.dump(json_data, f)
+                    return
+            else:
+                data = json.load(f)
+            data.append(message)
+            with open("wordlist.json", "w") as f:
+                # Write the modified contents to the file
+                json.dump(data, f)
+                
+        await interaction.response.send_message('Added \'' + message + '\' to the list of tips.')
 
 @tree.command(name = "markov", description = "We miss you mommi", guild=discord.Object(id=672761536477134860)) #Add the guild ids in which the slash command will appear. If it should be in all, remove the argument, but note that it will take some time (up to an hour) to register the command if it's for all guilds.
 async def first_command(interaction):
@@ -275,7 +291,7 @@ async def on_message(message):
         if message.author.id == 1040033235075346543:  # replace with the user's ID
             await message.channel.send("Matrixlets seething over pythonchads.")
             return
-        if 'Admin' in [role.name for role in message.author.roles]:
+        if ('Admin' in [role.name for role in message.author.roles] or message.author.id == 1059612104979660830):
             await message.channel.send('Restarting...')
             os.execl(sys.executable, sys.executable, *sys.argv)
         else:
@@ -326,6 +342,8 @@ async def on_message(message):
                 json.dump(data, f)
     dictionary = preprocess_text(message_str)
     save_to_file(dictionary)
+    if (message.channel.id == 1066037129542647888 and not message.author.id == 1059612104979660830):
+        print(colored(f"Author: {message.author} | ID: {message.author.id} | Message: {message.content}", 'green'))
 # Start the Discord bot
 client.run(TOKEN)
 
